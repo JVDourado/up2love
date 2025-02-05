@@ -6,49 +6,90 @@ import '../screens/home_screen.dart';
 
 class LoginScreenService {
   Future<void> loginUser({
-    required String email,
+    required String input,
     required String password,
-    required TextEditingController emailController,
-    required TextEditingController passwordController,
     required BuildContext context,
   }) async {
     try {
-      String input = email.trim();
-      String finalEmail = input;
+      input = input.trim();
 
       if (input.isEmpty || password.isEmpty) {
-        throw 'Email e Senha não podem estar vazios';
+        throw 'Email/Username e Senha não podem estar vazios';
       }
 
-      // Check if input is an email or username
-      if (!input.contains('@') || !input.contains('.')) {
-        final userSnapshot = await FirebaseFirestore.instance
-            .collection('users')
-            .where('username', isEqualTo: input.trim().toLowerCase())
-            .get();
-
-        if (userSnapshot.docs.isEmpty) {
-          throw 'Usuário não encontrado';
-        }
-
-        // Get the email from the user's document
-        finalEmail = userSnapshot.docs.first['email'];
+      // Check if input is a username (starts with '@')
+      if (input.startsWith('@')) {
+        // Handle username login
+        await _loginWithUsername(input, password, context);
+      } else {
+        // Handle email login
+        await _loginWithEmail(input, password, context);
       }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Falha no login: $e')),
+      );
+    }
+  }
+
+  Future<void> _loginWithUsername(
+    String username,
+    String password,
+    BuildContext context,
+  ) async {
+    try {
+      // Convert the username to lowercase for consistency
+      username = username.toLowerCase();
+
+      // Query Firestore to find the user document with the matching username
+      final userSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('username', isEqualTo: username)
+          .limit(1) // Limit to 1 document
+          .get();
+
+      if (userSnapshot.docs.isEmpty) {
+        throw 'Usuário não encontrado';
+      }
+
+      // Get the email from the user's document
+      final email = userSnapshot.docs.first['email'];
 
       // Sign in with the email
       await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: finalEmail,
+        email: email,
         password: password,
       );
 
+      // Navigate to the home screen
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => HomeScreen()),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Falha no login: $e')),
+      throw 'Erro ao fazer login com username: $e';
+    }
+  }
+
+  Future<void> _loginWithEmail(
+    String email,
+    String password,
+    BuildContext context,
+  ) async {
+    try {
+      // Sign in with the email
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
       );
+
+      // Navigate to the home screen
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => HomeScreen()),
+      );
+    } catch (e) {
+      throw 'Erro ao fazer login com email: $e';
     }
   }
 

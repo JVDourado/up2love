@@ -29,15 +29,8 @@ class HomeScreenService {
     }
   }
 
-  Future<String?> getPartnerProfilePic(String? partnerUID) async {
-    if (partnerUID == null) return null;
-    try {
-      DocumentSnapshot partnerDoc =
-          await _firestore.collection('users').doc(partnerUID).get();
-      return partnerDoc['profile_picture'] as String?;
-    } catch (e) {
-      return null;
-    }
+  Stream<DocumentSnapshot> getPartnerProfilePicStream(String partnerUID) {
+    return _firestore.collection('users').doc(partnerUID).snapshots();
   }
 
   Future<void> sendMessageToPartner(String userUID, String message) async {
@@ -94,21 +87,17 @@ class HomeScreenService {
     return messagesSnapshot.docs.isNotEmpty;
   }
 
-  Future<DocumentSnapshot<Object?>?> getPartnerMessage(String userUID) async {
+  Stream<DocumentSnapshot<Object?>?> getPartnerMessageStream(String userUID) async* {
     String? partnerUID = await getPartnerUID(userUID);
     if (partnerUID != null) {
-      QuerySnapshot messagesSnapshot = await _firestore
+      yield* _firestore
           .collection('users')
           .doc(partnerUID)
           .collection('messages')
           .orderBy('sentAt', descending: true)
           .limit(1)
-          .get();
-
-      if (messagesSnapshot.docs.isNotEmpty) {
-        return messagesSnapshot.docs.first;
-      }
+          .snapshots()
+          .map((snapshot) => snapshot.docs.isNotEmpty ? snapshot.docs.first : null);
     }
-    return null;
   }
 }

@@ -29,13 +29,16 @@ class HomeScreen extends StatelessWidget {
 
     final profilePicFuture = _homeScreenService.getUserProfilePic(userUID);
     final partnerUIDFuture = _homeScreenService.getPartnerUID(userUID);
-    final partnerProfilePicFuture = partnerUIDFuture.then(
-      (partnerUID) => _homeScreenService.getPartnerProfilePic(partnerUID),
-    );
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Up2Love'),
+        title: SizedBox(
+          height: 200, // Increase height
+          child: Image.asset(
+            'assets/us2love_flat_purple.png',
+            fit: BoxFit.contain, // Ensure it scales properly
+          ),
+        ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -144,27 +147,47 @@ class HomeScreen extends StatelessWidget {
             left: 16,
             bottom: 16,
             child: FutureBuilder<String?>(
-              // Partner profile pic
-              future: partnerProfilePicFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
+              // Partner UID
+              future: partnerUIDFuture,
+              builder: (context, partnerUIDSnapshot) {
+                if (partnerUIDSnapshot.connectionState ==
+                    ConnectionState.waiting) {
                   return const CircularProgressIndicator();
-                } else if (snapshot.hasError || !snapshot.hasData) {
+                } else if (partnerUIDSnapshot.hasError ||
+                    !partnerUIDSnapshot.hasData) {
                   return const CircleAvatar(
                       radius: 28, backgroundColor: Colors.grey);
                 } else {
-                  return GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => PartnerScreen()),
-                      );
+                  // Use StreamBuilder to listen for real-time updates
+                  return StreamBuilder<DocumentSnapshot>(
+                    stream: _homeScreenService
+                        .getPartnerProfilePicStream(partnerUIDSnapshot.data!),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const CircularProgressIndicator();
+                      } else if (snapshot.hasError || !snapshot.hasData) {
+                        return const CircleAvatar(
+                            radius: 28, backgroundColor: Colors.grey);
+                      } else {
+                        String? profilePicUrl =
+                            snapshot.data!['profile_picture'] as String?;
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => PartnerScreen()),
+                            );
+                          },
+                          child: CircleAvatar(
+                            radius: 28,
+                            backgroundImage: profilePicUrl != null
+                                ? NetworkImage(profilePicUrl)
+                                : null,
+                          ),
+                        );
+                      }
                     },
-                    child: CircleAvatar(
-                      radius: 28,
-                      backgroundImage: NetworkImage(snapshot.data!),
-                    ),
                   );
                 }
               },
@@ -172,23 +195,19 @@ class HomeScreen extends StatelessWidget {
           ),
           // Positioned thought balloon, separate from partner button
           Positioned(
-            bottom: 70, // Ajuste o espaço para posicionar o balão mais alto
-            left:
-                50, // Ajuste a posição à esquerda em relação ao botão do parceiro
-            child: FutureBuilder<DocumentSnapshot<Object?>?>(
-              future: _homeScreenService
-                  .getPartnerMessage(userUID), // Buscar a mensagem do parceiro
+            bottom: 70,
+            left: 50,
+            child: StreamBuilder<DocumentSnapshot<Object?>?>(
+              stream: _homeScreenService.getPartnerMessageStream(userUID),
               builder: (context, messageSnapshot) {
-                if (messageSnapshot.connectionState ==
-                    ConnectionState.waiting) {
-                  return const SizedBox();
-                } else if (messageSnapshot.hasData &&
-                    messageSnapshot.data != null) {
-                  // Recuperar a mensagem do parceiro dos dados
+                if (messageSnapshot.connectionState == ConnectionState.waiting) {
+                  return const SizedBox(); // Show nothing while loading
+                } else if (messageSnapshot.hasError) {
+                  return const Text('Erro ao carregar mensagem');
+                } else if (messageSnapshot.hasData && messageSnapshot.data != null) {
                   String message = messageSnapshot.data!['message'] ?? '';
                   if (message.isEmpty) {
-                    message =
-                        "Nenhuma mensagem por hoje"; // Mensagem padrão do sistema
+                    message = "Nenhuma mensagem por hoje";
                   }
                   return Container(
                     padding: const EdgeInsets.all(8),
@@ -204,8 +223,9 @@ class HomeScreen extends StatelessWidget {
                       style: const TextStyle(fontSize: 16, color: Colors.black),
                     ),
                   );
+                } else {
+                  return const SizedBox(); // No data
                 }
-                return const SizedBox();
               },
             ),
           )
@@ -237,7 +257,6 @@ class HomeScreen extends StatelessWidget {
               String message = messageController.text.trim();
               if (message.isNotEmpty) {
                 await _homeScreenService.sendMessageToPartner(userUID, message);
-                // Show message as thought balloon
                 Navigator.pop(context);
               }
             },

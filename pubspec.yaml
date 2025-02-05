@@ -50,6 +50,7 @@ dependencies:
 
 dev_dependencies:
   flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.3.9
   flutter_test:
     sdk: flutter
 
@@ -60,12 +61,12 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
 
-flutter_icons:
+flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/logo1.jpeg"
+  image_path: "assets/us2love_icon.png"
   adaptive_icon_background: "#ffffff"  # Change this as needed
-  adaptive_icon_foreground: "assets/logo1.jpeg"  # For Android adaptive icons
+  adaptive_icon_foreground: "assets/us2love_icon.png"  # For Android adaptive icons
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
@@ -79,8 +80,19 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - assets/logo2.png
+    - assets/us2love_flat_white.png
+    - assets/us2love_flat_purple.png
+    - assets/us2love_icon.png
+flutter_native_splash:
+  color: "#ffffff" # Background color for light mode
+  image: assets/light_splash.png # Light mode splash image
 
+  color_dark: "#000000" # Background color for dark mode
+  image_dark: assets/dark_splash.png # Dark mode splash image
+
+  android: true
+  ios: true
+  web: false
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 

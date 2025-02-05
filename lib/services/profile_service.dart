@@ -8,50 +8,50 @@ class ProfileService {
 
   // Method to pick and upload the profile picture
   Future<String?> uploadProfilePicture(File imageFile, String userUID) async {
-  try {
-    // Generate a unique path for the new profile picture
-    String newFilePath = 'users/$userUID/profile_picture/${DateTime.now().toIso8601String()}';
+    try {
+      // Generate a unique path for the new profile picture
+      String newFilePath = 'users/$userUID/profile_picture/${DateTime.now().toIso8601String()}';
 
-    // Upload the new image to Firebase Storage
-    UploadTask uploadTask = _storage.ref(newFilePath).putFile(imageFile);
+      // Upload the new image to Firebase Storage
+      UploadTask uploadTask = _storage.ref(newFilePath).putFile(imageFile);
 
-    // Wait for the upload to complete
-    TaskSnapshot taskSnapshot = await uploadTask;
+      // Wait for the upload to complete
+      TaskSnapshot taskSnapshot = await uploadTask;
 
-    // Get the download URL of the uploaded image
-    String downloadURL = await taskSnapshot.ref.getDownloadURL();
+      // Get the download URL of the uploaded image
+      String downloadURL = await taskSnapshot.ref.getDownloadURL();
 
-    // Store the file path in Firestore
-    await _firestore.collection('users').doc(userUID).update({
-      'profile_picture': downloadURL,
-      'profile_picture_path': newFilePath, // Store the file path
-    });
+      // Store the file path in Firestore
+      await _firestore.collection('users').doc(userUID).update({
+        'profile_picture': downloadURL,
+        'profile_picture_path': newFilePath, // Store the file path
+      });
 
-    return downloadURL;
-  } catch (e) {
-    print('Error uploading profile picture: $e');
-    return null;
+      return downloadURL;
+    } catch (e) {
+      print('Error uploading profile picture: $e');
+      return null;
+    }
   }
-}
 
   // Method to delete the old profile picture
   Future<void> deleteOldProfilePicture(String userUID, String currentProfilePicUrl) async {
-  try {
-    // Fetch the stored file path from Firestore
-    DocumentSnapshot userSnapshot = await _firestore.collection('users').doc(userUID).get();
-    String? filePath = userSnapshot.get('profile_picture_path');
+    try {
+      // Fetch the stored file path from Firestore
+      DocumentSnapshot userSnapshot = await _firestore.collection('users').doc(userUID).get();
+      String? filePath = userSnapshot.get('profile_picture_path');
 
-    if (filePath != null && filePath.isNotEmpty) {
-      // Delete the file using the stored file path
-      await _storage.ref(filePath).delete();
-      print('Old profile picture deleted successfully.');
-    } else {
-      print('No file path found for the old profile picture.');
+      if (filePath != null && filePath.isNotEmpty) {
+        // Delete the file using the stored file path
+        await _storage.ref(filePath).delete();
+        print('Old profile picture deleted successfully.');
+      } else {
+        print('No file path found for the old profile picture.');
+      }
+    } catch (e) {
+      print('Error deleting previous profile picture: $e');
     }
-  } catch (e) {
-    print('Error deleting previous profile picture: $e');
   }
-}
 
   // Method to fetch the user's profile data from Firestore
   Future<Map<String, dynamic>?> getUserProfile(String userUID) async {

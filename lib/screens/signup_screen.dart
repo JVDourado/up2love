@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import '../services/signup_screen_service.dart';  // Import the service file
+import '../services/signup_service.dart';  // Import the service file
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});

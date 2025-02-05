@@ -114,21 +114,23 @@ class PhotoService {
   }
 
   // Fetch partner's UID and username
-  Future<Map<String, String>> fetchPartnerInfo(String userUID) async {
+  Future<Map<String, String>?> fetchPartnerInfo(String userUID) async {
     try {
       final userDoc = await FirebaseFirestore.instance.collection('users').doc(userUID).get();
-      if (userDoc.exists) {
+      if (userDoc.exists && userDoc.data() != null) {
         final partnerUID = userDoc['partnerUID'];
-        final partnerDoc = await FirebaseFirestore.instance.collection('users').doc(partnerUID).get();
-        final partnerUsername = partnerDoc['username'];
-
-        return {
-          'partnerUID': partnerUID,
-          'partnerUsername': partnerUsername,
-        };
-      } else {
-        throw Exception('Usuário não encontrado');
+        if (partnerUID != null) {
+          final partnerDoc = await FirebaseFirestore.instance.collection('users').doc(partnerUID).get();
+          if (partnerDoc.exists && partnerDoc.data() != null) {
+            final partnerUsername = partnerDoc['username'];
+            return {
+              'partnerUID': partnerUID,
+              'partnerUsername': partnerUsername,
+            };
+          }
+        }
       }
+      return null; // Return null if partner info is not found
     } catch (e) {
       throw Exception('Falha ao buscar informações do parceiro: $e');
     }

@@ -26,7 +26,7 @@ class _SharedPhotosScreenState extends State<SharedPhotosScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchPartnerInfo();
+    _fetchData();
   }
 
   @override
@@ -35,27 +35,35 @@ class _SharedPhotosScreenState extends State<SharedPhotosScreen> {
     super.dispose();
   }
 
-  Future<void> _fetchPartnerInfo() async {
+  Future<void> _fetchData() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
     try {
-      final partnerInfo = await _photoService.fetchPartnerInfo(user.uid);
-      setState(() {
-        _partnerUID = partnerInfo['partnerUID'];
-        _partnerUsername = partnerInfo['partnerUsername'];
-      });
+      // Fetch user uploads (always fetch this, even if partner info fails)
+      await _fetchUserUploads(user.uid);
 
-      // Fetch the current user's uploads
-      _fetchUserUploads(user.uid);
+      // Fetch partner info and uploads (if available)
+      try {
+        final partnerInfo = await _photoService.fetchPartnerInfo(user.uid);
+        if (partnerInfo != null) {
+          setState(() {
+            _partnerUID = partnerInfo['partnerUID'];
+            _partnerUsername = partnerInfo['partnerUsername'];
+          });
 
-      // Fetch the partner's uploads if partnerUID is available
-      if (_partnerUID != null) {
-        _fetchPartnerUploads(_partnerUID!);
+          // Fetch partner uploads if partnerUID is available
+          if (_partnerUID != null) {
+            await _fetchPartnerUploads(_partnerUID!);
+          }
+        }
+      } catch (e) {
+        // If fetching partner info fails, log the error but continue
+        print('Failed to fetch partner info: $e');
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Falha ao buscar informações do parceiro: $e')),
+        SnackBar(content: Text('Falha ao buscar dados: $e')),
       );
     }
   }
@@ -175,7 +183,7 @@ class _SharedPhotosScreenState extends State<SharedPhotosScreen> {
       // Refresh the user's uploads after uploading a new photo
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        _fetchUserUploads(user.uid);
+        await _fetchUserUploads(user.uid);
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -198,7 +206,7 @@ class _SharedPhotosScreenState extends State<SharedPhotosScreen> {
       // Refresh the user's uploads after deleting a photo
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        _fetchUserUploads(user.uid);
+        await _fetchUserUploads(user.uid);
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -236,7 +244,7 @@ class _SharedPhotosScreenState extends State<SharedPhotosScreen> {
                 // Refresh the user's uploads after editing a caption
                 final user = FirebaseAuth.instance.currentUser;
                 if (user != null) {
-                  _fetchUserUploads(user.uid);
+                  await _fetchUserUploads(user.uid);
                 }
               }
             },
@@ -351,7 +359,7 @@ class _SharedPhotosScreenState extends State<SharedPhotosScreen> {
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
-            child: allUploads.isEmpty
+            child: _userUploads.isEmpty && _partnerUploads.isEmpty
                 ? const Center(child: Text('Sem fotos no momento.'))
                 : GridView.builder(
                     padding: const EdgeInsets.all(8),

@@ -10,14 +10,14 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _inputController = TextEditingController(); // Updated to handle both email and username
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _isPasswordVisible = false;
   final LoginScreenService _loginService = LoginScreenService();
 
   // FocusNodes to manage keyboard behavior
-  final FocusNode _emailFocusNode = FocusNode();
+  final FocusNode _inputFocusNode = FocusNode(); // Updated to handle both email and username
   final FocusNode _passwordFocusNode = FocusNode();
 
   Future<void> _login() async {
@@ -26,10 +26,8 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     await _loginService.loginUser(
-      email: _emailController.text,
+      input: _inputController.text, // Updated to pass the input (email or username)
       password: _passwordController.text,
-      emailController: _emailController,
-      passwordController: _passwordController,
       context: context,
     );
 
@@ -40,7 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _resetPassword() async {
     await _loginService.resetPassword(
-      email: _emailController.text,
+      email: _inputController.text, // Use the input field for email in reset password
       context: context,
     );
   }
@@ -51,7 +49,7 @@ class _LoginScreenState extends State<LoginScreen> {
     double keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
 
     return Scaffold(
-      resizeToAvoidBottomInset: true,  // Keep this as false
+      resizeToAvoidBottomInset: true, // Keep this as true
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -76,7 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: GestureDetector(
             // Dismiss keyboard when tapping outside input fields
             onTap: () {
-              _emailFocusNode.unfocus();
+              _inputFocusNode.unfocus();
               _passwordFocusNode.unfocus();
             },
             child: ListView(
@@ -89,7 +87,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               children: [
                 Image.asset(
-                  'assets/logo2.png',
+                  'assets/us2love_icon.png',
                   height: 200,
                 ),
                 const SizedBox(height: 32),
@@ -103,8 +101,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     padding: const EdgeInsets.all(24.0),
                     child: Column(
                       children: [
-                        // Email Input
-                        _buildTextField(_emailController, 'Email', _emailFocusNode),
+                        // Input Field (Email or Username)
+                        _buildTextField(_inputController, 'Email ou Username', _inputFocusNode),
                         const SizedBox(height: 16),
                         // Password Input
                         _buildTextField(

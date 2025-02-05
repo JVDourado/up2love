@@ -20,7 +20,7 @@ class LoveApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Up2Love',
+      title: 'Us2Love',
       theme: ThemeData(
         primarySwatch: Colors.pink,
       ),
