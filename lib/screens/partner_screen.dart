@@ -1,6 +1,5 @@
-// partner_screen.dart
 import 'package:flutter/material.dart';
-import '../services/partner_service.dart'; // Import the service
+import '../services/partner_service.dart';
 
 class PartnerScreen extends StatefulWidget {
   const PartnerScreen({super.key});
@@ -17,7 +16,47 @@ class _PartnerScreenState extends State<PartnerScreen> {
   final TextEditingController _statusController = TextEditingController();
   final TextEditingController _partnerController = TextEditingController();
 
-  final PartnerService _partnerService = PartnerService(); // Create an instance
+  final PartnerService _partnerService = PartnerService(); // Service instance
+  String? _profilePictureUrl; // Stores profile picture URL
+  bool _isLoading = true; // Loading state
+  bool _hasError = false; // Error state
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPartnerData();
+  }
+
+  Future<void> _loadPartnerData() async {
+    try {
+      final data = await _partnerService.getPartnerData();
+      if (data != null) {
+        setState(() {
+          _nameController.text = data['name'] ?? "Anônimo";
+          _usernameController.text = data['username'] ?? "Não fornecido";
+          _emailController.text = data['email'] ?? "Não fornecido";
+          _ageController.text = (data['age']?.toString()) ?? "Não fornecido";
+          _statusController.text = data['status'] ?? "Não fornecido";
+          _partnerController.text = data['partner'] ?? "Não fornecido";
+          _profilePictureUrl = data['profile_picture'];
+          _hasError = false;
+        });
+      } else {
+        setState(() {
+          _hasError = true;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching partner data: $e");
+      setState(() {
+        _hasError = true;
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -62,77 +101,58 @@ class _PartnerScreenState extends State<PartnerScreen> {
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
-            child: FutureBuilder<Map<String, dynamic>?>(
-              future: _partnerService.getPartnerData(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (snapshot.hasError || snapshot.data == null) {
-                  return const Center(
-                    child: Text(
-                        'Erro ao carregar dados do parceiro ou parceiro não encontrado.',
-                        style: TextStyle(color: Colors.white)),
-                  );
-                }
-
-                var partnerData = snapshot.data!;
-
-                _nameController.text =
-                    partnerData['name'] ?? "Parceiro Anônimo";
-                _usernameController.text =
-                    partnerData['username'] ?? "Nome de usuário não fornecido";
-                _emailController.text = partnerData['email'] ?? "Não fornecido";
-                _ageController.text =
-                    (partnerData['age']?.toString()) ?? "Não fornecido";
-                _statusController.text = partnerData['status'] ?? "Não fornecido";
-                _partnerController.text =
-                    partnerData['partner'] ?? "Não fornecido";
-
-                return Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        CircleAvatar(
-                          radius: 70,
-                          backgroundImage: partnerData['profile_picture'] != null
-                              ? NetworkImage(partnerData['profile_picture'])
-                              : null,
-                          child: partnerData['profile_picture'] == null
-                              ? const Icon(Icons.person, size: 70)
-                              : null,
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator()) // Show loading
+                : _hasError
+                    ? const Center(
+                        child: Text(
+                          'Erro ao carregar dados do parceiro ou parceiro não encontrado.',
+                          style: TextStyle(color: Colors.white),
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          _nameController.text,
-                          style: const TextStyle(
-                            fontSize: 30,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _usernameController.text,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 18,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        _buildProfileCard('Email', _emailController),
-                        _buildProfileCard('Idade', _ageController),
-                        _buildProfileCard('Status', _statusController),
-                        _buildProfileCard('Parceiro', _partnerController),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
+                      )
+                    : _buildProfileContent(),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildProfileContent() {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          CircleAvatar(
+            radius: 70,
+            backgroundImage: _profilePictureUrl != null
+                ? NetworkImage(_profilePictureUrl!)
+                : null,
+            child: _profilePictureUrl == null
+                ? const Icon(Icons.person, size: 70)
+                : null,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            _nameController.text,
+            style: const TextStyle(
+              fontSize: 30,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _usernameController.text,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 18,
+            ),
+          ),
+          const SizedBox(height: 24),
+          _buildProfileCard('Email', _emailController),
+          _buildProfileCard('Idade', _ageController),
+          _buildProfileCard('Status', _statusController),
+          _buildProfileCard('Parceiro', _partnerController),
+        ],
       ),
     );
   }
