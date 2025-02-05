@@ -1,6 +1,6 @@
 # CoupleConnect - A Partner-Focused Social Platform
 
-Up2Love is an app designed **to help couples stay connected**, share moments, and organize their lives together. With features like messaging, mood tracking, photo sharing, and event planning, CoupleConnect strengthens relationships by providing a shared digital space for couples.
+Us2Love is an app designed **to help couples stay connected**, share moments, and organize their lives together. With features like messaging, mood tracking, photo sharing, and event planning, CoupleConnect strengthens relationships by providing a shared digital space for couples.
 
 ---
 
